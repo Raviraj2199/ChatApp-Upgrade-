@@ -1,0 +1,373 @@
+﻿ChatApp -Upgrade
+
+
+1. Dependencies 
+
+
+1.npm init
+2.npm install express (http framework for running node servers)
+3.npm install cors (we can call the servers anywhere from internet)
+4.npm install axios (we call api )
+5.npm install --save-dev nodemon (runs our nodejs server and development mode)
+6.npm install react-chat-engine-advance
+7.npm install react-chat-engine-prettier 
+** to run backend : npm run start
+**to run frontend: npm run dev
+
+
+2. Steps
+
+
+Step1: Setting up node js server 
+
+
+* First, let’s create a new project for our backend/ and frontend/. Then we’ll start with setting up our Node JS backend inside
+
+
+mkdir nodjs-reactjs-chat
+cd nodejs-reactjs-chat
+mkdir backend
+cd backend
+* Not initiate a new NodeJS project
+
+
+npm init # Hit enter for every step
+* Now we will be able to see the package.json file.
+* To run a proper Node server which we can connect to, we’ll need to install a few dependencies.
+npm i express cors axios
+npm i --save-dev nodemon
+* express is the HTTP server framework we’ll be using
+* cors allows us to process requests from other hosts (for our ReactJS app)
+* axios allows us to send HTTP requests to other servers (for Chat Engine APIs)
+* nodemon allows us to run the server in dev-mode
+
+
+Now to start node.js we edit script in package.json,
+
+
+{
+    ...
+    "scripts": {
+        "start": "nodemon index.js"
+    },
+Step2: Connecting Node.js to ChatEngine.io 
+
+
+* ChatEngine.io provides full-stack chat tools - which makes adding chat into Node apps easy
+
+
+1. Let’s create a Chat Engine project: 
+* We'll create a Chat Engine project, and store our users in this project. All users in our Chat Engine project can chat with one another through their APIs / platform.
+* Go to ChatEngine.io, sign up, and create your first project. Once this is done, you’ll see a Project ID and a Private Key.
+
+
+1.  First go to Chat Engine | Simple APIs & UI Kits and signup
+  
+
+2. Then Create a new project:
+  
+
+
+
+3. Once created you can get project Id and private key : 
+  
+
+
+
+* The Project ID is an API key which connects your API calls to your project
+* The Private Key gives you permission to create and destroy users on your project
+
+
+To check rest api calls visit: Chat Engine or rest.catengine.io 
+
+
+Here we can get examples for create user or get user:
+  
+
+
+
+
+
+
+
+
+
+* Now create a index.js file in backend
+const express = require("express");
+const cors = require("cors");
+
+
+const app = express();
+app.use(express.json());
+app.use(cors({ origin: true }));
+
+
+app.post("/authenticate", async (req, res) => {
+  const { username } = req.body;
+  return res.json({ username: username, secret: "sha256..." });
+});
+
+
+app.listen(3001);
+
+
+* Now add the code to the /authenticate function in index.js
+
+
+const express = require("express");
+const cors = require("cors");
+const axios = require("axios");
+
+
+const app = express();
+app.use(express.json());
+app.use(cors({ origin: true }));
+
+
+app.post("/authenticate", async (req, res) => {
+  const { username } = req.body;
+  try{
+    const r = await axios.put('https://api.chatengine.io/users/',
+    {username: username, secret: username, first_name: username},
+    {headers: {"private-key": "c41ee6cf-bece-4d8c-8801-66ff19d2e6d2"}}
+    )
+    return res.status(r.status).json(r.data)
+  } catch(e){
+    return res.status(e.response.status).json(e.response.data)
+  }
+  return res.json({ username: username, secret: "sha256..." });
+});
+
+
+app.listen(3001);
+
+
+This how are final code will be
+* Now if we want to add the user we’ll create a request.rest file and add users from their 
+  
+
+
+
+ This is temporary how nodejs works in backend. 
+
+
+Let's go for Frontend
+
+
+Step3: Setup Reactjs Frontend
+* Open parallel terminal and create vite ( https://vitejs.dev/ ): Vite.js is a rapid development tool for modern web projects, Vite uses native browser ES imports to enable support for modern browsers without a build process.
+
+
+Cmd: npm create vite@latest 
+* Once cmd runs choose options react and javascript and give folder name as frontend
+
+
+✔ Project name: … frontend
+✔ Select a framework: › React
+✔ Select a variant: › JavaScript
+
+
+* Once created go into frontend and through terminal get all dependencies by npm install 
+* Now go to main.jsx and remove strict mode as it will not support the sockets that we will be using. And also remove the index.css file.
+*  Now go to App.jsx and edit the code and replace it with : 
+
+
+import { useState } from "react";
+
+
+import "./App.css";
+
+
+import AuthPage from "./AuthPage";
+import ChatsPage from "./ChatsPage";
+
+
+function App() {
+  const [user, setUser] = useState(undefined);
+
+
+  if (!user) {
+    return <AuthPage onAuth={(user) => setUser(user)} />;
+  } else {
+    return <ChatsPage user={user} />;
+  }
+}
+
+
+export default App;
+
+
+* This App.jsx file will render the Authentication Page until a user logs in or signs up. Then, the onAuth() callback will set the user state, and render the Chats Page (and pass the user state in as a prop). 
+
+
+* Now create 2 .jsx files AuthPage.jsx and ChatsPage.jsx and write code for each: 
+1. AuthPage.jsx: 
+const AuthPage = (props) => {
+  const onSubmit = (e) => {
+    e.preventDefault();
+    const { value } = e.target[0];
+    props.onAuth({ username: value, secret: value });
+  };
+
+
+  return (
+    <div className="background">
+      <form onSubmit={onSubmit} className="form-card">
+        <div className="form-title">Welcome 👋</div>
+
+
+        <div className="form-subtitle">Set a username to get started</div>
+
+
+        <div className="auth">
+          <div className="auth-label">Username</div>
+          <input className="auth-input" name="username" />
+          <button className="auth-button" type="submit">
+            Enter
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+
+export default AuthPage;
+
+
+2. ChatsPage.jsx:
+const ChatsPage = () => {
+  return <div className="background">chats...</div>;
+};
+export default ChatsPage;
+
+
+
+
+* Now u can run server by npm run dev 
+  
+
+
+
+Now we have to do 2 things: 
+1. Connect with Auth Page form to our /authenticate endpoint on Node JS
+2. Render a Chats Page chat UI and connect it to Chat Engine.
+
+
+
+
+Step4: Connect React to Nodejs and Chat engine 
+
+
+Now install axios npm install axios, 
+* This will call the NodeJS server at http://localhost:3001/authenticate upon onSubmit(), and send the required username in a request body. This should login and sign up new users. 
+
+
+Code for AuthPage will be: 
+import axios from "axios";
+const AuthPage = (props) => {
+  const onSubmit = (e) => {
+    e.preventDefault();
+    const { value } = e.target[0];
+    axios
+      .post("http://localhost:3001/authenticate", { username: value })
+      .then((r) => props.onAuth({ ...r.data, secret: value }))
+      .catch((e) => console.log("Auth Error", e));
+  };
+
+
+  return (
+    <div className="background">
+      <form onSubmit={onSubmit} className="form-card">
+        <div className="form-title">Welcome 👋</div>
+
+
+        <div className="form-subtitle">Set a username to get started</div>
+
+
+        <div className="auth">
+          <div className="auth-label">Username</div>
+          <input className="auth-input" name="username" />
+          <button className="auth-button" type="submit">
+            Enter
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+
+export default AuthPage;
+
+
+* To connect our Chats Page to Chat Engine, we can use one of their prebuilt UIs
+1. react-chat-engine-advanced - npm (npmjs.com)
+2. react-chat-engine - npm (npmjs.com)
+3. react-chat-engine-pretty - npm (npmjs.com)
+
+
+* Note: What is MultiChatSocket: it's a web socket  that lets the user connect to all of the chats.
+MultiChatWindow: let the user view chat pages 
+usemultiChatLogic: use all the state management and api calls that makes app work
+Now change the ChatsPage so that we can integrate it with UIs: 
+
+
+import {MultiChatSocket, MultiChatWindow, useMultiChatLogic} from 'react-chat-engine-advanced'
+
+
+const ChatsPage = (props) => {
+    const chatProps = useMultiChatLogic('267e9c34-52db-487f-8961-64628912e540',
+    props.user.username,
+    props.user.secret);
+    return (
+    <div style={{ height: '100vh'}}>
+        <MultiChatSocket {...chatProps} />
+        <MultiChatWindow {...chatProps} style={{ height: '100%'}} />
+    </div>
+        )
+}
+
+
+export default ChatsPage;
+
+
+
+
+Here i have used react-chat-engine-advance, you can use any one
+
+
+Fina output: 
+
+
+  
+
+
+
+
+
+
+
+Let's also try with react-cheat-engine-pretty, but first install npm install react-cheat-engine-pretty, and edit the code: 
+
+
+import { PrettyChatWindow } from "react-chat-engine-pretty";
+
+
+const ChatsPage = (props) => {
+  return (
+    <div className="background">
+      <PrettyChatWindow
+        projectId={import.meta.env.VITE_CHAT_ENGINE_PROJECT_ID}
+        username={props.user.username}
+        secret={props.user.secret}
+      />
+    </div>
+  );
+};
+
+
+export default ChatsPage;
+
+
+Final Output:
